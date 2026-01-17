@@ -4,7 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 import { Member, Proposal, VotesState, CRITERIA } from '../types';
 import { CORE_TEAM_IDS } from '../constants';
 import { generateReportText } from '../utils/formatReport';
-import { Send, Bot, Sparkles, Loader2, RefreshCw, FileText, BarChart3, Download, Share2, Printer, Table, Brain, Calculator, CheckCircle2, FileType } from 'lucide-react';
+import { Send, Bot, Sparkles, Loader2, RefreshCw, FileText, BarChart3, Download, Share2, Printer, Table, Brain, Calculator, FileType } from 'lucide-react';
 
 interface AIChatPanelProps {
   proposals: Proposal[];
@@ -37,7 +37,7 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
   const [aiScores, setAiScores] = useState<AIScoreData[] | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   
-  // Default to 'doc'
+  // Default to 'doc' (Documento Oficial)
   const [activeSubTab, setActiveSubTab] = useState<'visual' | 'doc' | 'ai-scoring' | 'text' | 'export'>('doc'); 
 
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -48,9 +48,6 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
     let context = `DADOS DO AMBIENTE (PROTOCOLO GÊNESE v3.5 - CLEAN TEXT):\n`;
     context += `ARQUITETO DO SISTEMA: Edivaldo Junior (Líder Frontend / Squad Bravo).\n`;
     context += `PLANO DE BATALHA TRELLO V2.0 (ATIVO):\n`;
-    context += `  - Squad Alpha (Backend/Infra): Gabriel Araújo (Foco: Lambda, DynamoDB, API Gateway).\n`;
-    context += `  - Squad Bravo (Frontend/UI): Edivaldo Junior (Foco: React, Integração, Prototipagem).\n`;
-    context += `  - Comando: Emanuel Heráclio (Scrum Master).\n`;
     context += `META DO SPRINT 1: API Funcional (Upload+Deploy) e Protótipos de UI.\n`;
     
     context += `CRITÉRIOS DE AVALIAÇÃO:\n${CRITERIA.map((c, i) => `${i+1}. ${c}`).join('\n')}\n\n`;
@@ -129,16 +126,10 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
         
         const systemInstruction = `
         IDENTIDADE: Você é o 'Arquiteto Virtual MatrizCognis', assistente estratégico do Edivaldo Junior.
-        DIRETRIZ DE BATALHA (v3.5 - LEI DE TEXTO LIMPO):
-        1. Você conhece o Plano Trello v2.0.
-        2. IMPORTANTE: NÃO use emojis. O texto deve ser limpo e profissional.
-        3. Use formatação Markdown (negrito, listas).
-        4. Seja técnico sobre React, Tailwind e AWS Serverless.
-        5. Se Edivaldo perguntar "O que devo fazer?", responda com base nos cartões do Squad Bravo (Frontend).
-        ESTILO DE RESPOSTA: Direto, focado na engenharia.
+        DIRETRIZ: NÃO use emojis. Seja técnico e direto.
         `;
 
-        const prompt = `${context}\n\nPERGUNTA DO ARQUITETO (Edivaldo): ${userMsg}`;
+        const prompt = `${context}\n\nPERGUNTA: ${userMsg}`;
 
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
@@ -146,11 +137,11 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
             config: { systemInstruction }
         });
 
-        setMessages(prev => [...prev, { role: 'model', text: response.text || 'Desculpe, falha no protocolo de comunicação.' }]);
+        setMessages(prev => [...prev, { role: 'model', text: response.text || 'Falha no protocolo.' }]);
 
     } catch (error) {
         console.error("Erro IA:", error);
-        setMessages(prev => [...prev, { role: 'model', text: 'ERRO CRÍTICO: Falha na conexão com a Neural API. Verifique a chave de acesso.' }]);
+        setMessages(prev => [...prev, { role: 'model', text: 'Erro de conexão com a API.' }]);
     } finally {
         setIsLoadingChat(false);
     }
@@ -162,8 +153,7 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         
-        let dataPrompt = `Analise as seguintes propostas baseando-se estritamente nas descrições fornecidas.\n`;
-        dataPrompt += `CRITÉRIOS DE 1 a 5 (1=Péssimo, 5=Excelente):\n`;
+        let dataPrompt = `Analise as propostas. CRITÉRIOS DE 1 a 5:\n`;
         CRITERIA.forEach((c, i) => dataPrompt += `${i+1}. ${c}\n`);
         
         dataPrompt += `\nPROPOSTAS:\n`;
@@ -174,9 +164,8 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
 
         const prompt = `
         ${dataPrompt}
-        TAREFA: Como um Juiz Técnico Imparcial (Protocolo Gênese v3.5), atribua notas de 1 a 5.
-        Retorne APENAS um JSON seguindo estritamente este schema:
-        [{ "proposalId": "string", "proposalName": "string", "scores": [number, number, number, number], "reasoning": ["string", "string", "string", "string"] }]
+        TAREFA: Atribua notas de 1 a 5.
+        Retorne APENAS JSON: [{ "proposalId": "string", "proposalName": "string", "scores": [n,n,n,n], "reasoning": ["s","s","s","s"] }]
         `;
 
         const response = await ai.models.generateContent({
@@ -194,11 +183,10 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
             })).sort((a: AIScoreData, b: AIScoreData) => b.totalScore - a.totalScore);
             
             setAiScores(enrichedData);
-            setMessages(prev => [...prev, { role: 'model', text: 'Auditoria v3.5 concluída. Notas técnicas calculadas.' }]);
+            setMessages(prev => [...prev, { role: 'model', text: 'Auditoria concluída.' }]);
         }
     } catch (error) {
-        console.error("Erro AI Scoring:", error);
-        setMessages(prev => [...prev, { role: 'model', text: 'Erro ao gerar pontuação automática.' }]);
+        setMessages(prev => [...prev, { role: 'model', text: 'Erro na auditoria.' }]);
     } finally {
         setIsAnalyzing(false);
     }
@@ -210,25 +198,16 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const context = buildContext();
         
-        const prompt = `
-        ${context}
-        Atue como o braço direito do Arquiteto Edivaldo Junior. Gere um RELATÓRIO TÉCNICO EXECUTIVO (Protocolo Gênese v3.5).
-        Estruture:
-        1. Veredito do CTO Virtual
-        2. Análise de Arquitetura (Serverless)
-        3. Mitigação de Riscos
-        Seja rigoroso e limpo. Não use emojis.
-        `;
+        const prompt = `${context}\nGere um RELATÓRIO TÉCNICO EXECUTIVO. Veredito, Arquitetura e Riscos. Sem emojis.`;
 
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: prompt
         });
 
-        setAnalysisResult(response.text || "Sem análise gerada.");
+        setAnalysisResult(response.text || "Sem análise.");
         setActiveSubTab('text'); 
     } catch (error) {
-        console.error("Erro IA:", error);
         setAnalysisResult("Erro ao gerar análise.");
     } finally {
         setIsAnalyzing(false);
@@ -238,7 +217,7 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
   const handleExportWord = () => {
     if (!reportRef.current) return;
     const content = reportRef.current.innerHTML;
-    const styles = `<style>body{font-family:'Calibri','Arial',sans-serif;color:#333}h1{color:#2E1065;font-size:24pt}table{width:100%;border-collapse:collapse}td,th{border:1px solid #000;padding:10px}</style>`;
+    const styles = `<style>body{font-family:'Arial';}table{width:100%;border-collapse:collapse}td,th{border:1px solid #000;padding:5px}</style>`;
     const sourceHTML = `<html><head><title>Relatório</title>${styles}</head><body>${content}</body></html>`;
     const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
     const fileDownload = document.createElement("a");
@@ -255,11 +234,10 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
      const url = URL.createObjectURL(blob);
      const a = document.createElement('a');
      a.href = url;
-     a.download = `matriz_analise_${new Date().toISOString().slice(0,10)}.md`;
+     a.download = `matriz_analise.md`;
      document.body.appendChild(a);
      a.click();
      document.body.removeChild(a);
-     URL.revokeObjectURL(url);
   };
 
   const handleCopyDoc = () => {
@@ -271,7 +249,7 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
   const handleCopyText = () => {
     if(!analysisResult) return;
     navigator.clipboard.writeText(analysisResult);
-    alert('Texto da análise copiado!');
+    alert('Copiado!');
   };
 
   const handlePrint = () => {
@@ -279,7 +257,7 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
     if (!printContent) return;
     const win = window.open('', '', 'height=700,width=900');
     if(win) {
-        win.document.write('<html><head><title>Relatório</title><script src="https://cdn.tailwindcss.com"></script></head><body class="p-8">');
+        win.document.write('<html><body>');
         win.document.write(printContent.innerHTML);
         win.document.write('</body></html>');
         win.document.close();
@@ -296,134 +274,40 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
 
   const formatAIResponse = (text: string) => {
     if (!text) return null;
-    return text.split('\n').map((line, idx) => {
-        const parts = line.split(/(\*\*.*?\*\*)/g);
-        return (
-            <div key={idx} className={`min-h-[1.5em] ${line.trim().startsWith('-') || line.trim().startsWith('*') ? 'pl-4 mb-1' : 'mb-3'}`}>
-                {parts.map((part, pIdx) => {
-                    if (part.startsWith('**') && part.endsWith('**')) {
-                        return <strong key={pIdx} className="font-bold text-slate-900 dark:text-slate-100">{part.slice(2, -2)}</strong>;
-                    }
-                    return <span key={pIdx}>{part}</span>;
-                })}
-            </div>
-        );
-    });
+    return text.split('\n').map((line, idx) => (
+        <div key={idx} className="mb-1">{line}</div>
+    ));
   };
 
   const renderVisualReport = () => (
     <div ref={reportRef} className="space-y-8 p-6 bg-white dark:bg-slate-100 dark:text-slate-900 rounded-lg shadow-sm">
-        <div className="border-b-2 border-slate-300 pb-4 mb-4">
-            <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Dossiê de Decisão Técnica</h1>
-            <p className="text-slate-600 text-lg">Matriz de Análise Comparativa</p>
-            <p className="text-sm text-slate-500 mt-2 font-mono">Arquiteto: Edivaldo Junior | Data: {new Date().toLocaleDateString()}</p>
-        </div>
-
-        <div className="space-y-4">
-            <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800 border-b border-slate-200 pb-2">
-                <BarChart3 size={24} className="text-indigo-600" /> Votação da Equipe
-            </h2>
-            <div className="space-y-4 pt-2">
-                {stats.map((stat) => (
-                    <div key={stat.id}>
-                        <div className="flex justify-between text-sm mb-1 font-semibold text-slate-700">
-                            <span>{stat.name}</span>
-                            <span>{stat.average} / 20</span>
-                        </div>
-                        <div className="w-full bg-slate-200 rounded-full h-5 overflow-hidden border border-slate-300 bar-bg">
-                            <div className={`h-full bar-fill ${stat.id === winner.id ? 'bg-emerald-500' : 'bg-blue-600'}`} style={{ width: `${stat.percent}%` }}></div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-
-        <div className="space-y-4 pt-6 page-break-inside-avoid">
-             <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800 border-b border-slate-200 pb-2">
-                <Table size={24} className="text-indigo-600" /> Métricas Detalhadas
-            </h2>
-            <table className="w-full text-sm border-collapse border border-slate-400 mt-4">
-                <thead>
-                    <tr className="bg-slate-100">
-                        <th className="border border-slate-400 p-3 text-left text-slate-800 font-bold">Projeto</th>
-                        <th className="border border-slate-400 p-3 text-center text-slate-800 font-bold">Total</th>
-                        <th className="border border-slate-400 p-3 text-center text-slate-800 font-bold">Média</th>
-                        <th className="border border-slate-400 p-3 text-center text-slate-800 font-bold">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {stats.map((stat, idx) => (
-                         <tr key={stat.id} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} ${stat.id === winner.id ? 'bg-emerald-50 winner-row' : ''}`}>
-                            <td className="border border-slate-400 p-3 font-medium text-slate-700">{stat.name} {stat.id === winner.id && '🏆'}</td>
-                            <td className="border border-slate-400 p-3 text-center text-slate-700">{stat.totalPoints}</td>
-                            <td className="border border-slate-400 p-3 text-center font-bold text-slate-900">{stat.average}</td>
-                            <td className="border border-slate-400 p-3 text-center font-semibold text-slate-700">{idx === 0 ? 'Vencedor' : `Opção ${idx}`}</td>
-                         </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-
-        {analysisResult && (
-            <div className="space-y-4 pt-6 border-t-2 border-slate-300 mt-4">
-                <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800">
-                    <Sparkles size={24} className="text-indigo-600" /> Parecer do CTO Virtual
-                </h2>
-                <div className="prose max-w-none text-sm text-slate-700 leading-relaxed bg-slate-50 p-6 rounded-lg border border-slate-200">
-                    {formatAIResponse(analysisResult)}
+        <h1 className="text-2xl font-bold">Relatório Visual</h1>
+        {stats.map((stat) => (
+            <div key={stat.id}>
+                <div className="flex justify-between text-sm mb-1">
+                    <span>{stat.name}</span>
+                    <span>{stat.average} / 20</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-4 overflow-hidden">
+                    <div className="h-full bg-blue-600" style={{ width: `${stat.percent}%` }}></div>
                 </div>
             </div>
-        )}
+        ))}
     </div>
   );
 
   const renderAIScoringPanel = () => {
-    if (!aiScores) {
-         return (
-            <div className="flex flex-col items-center justify-center h-80 text-center p-8 space-y-4">
-                <div className="bg-purple-100 dark:bg-purple-900/30 p-6 rounded-full"><Brain size={48} className="text-purple-600 dark:text-purple-400" /></div>
-                <div>
-                    <h3 className="text-xl font-bold text-slate-800 dark:text-white">Auditoria IA (Protocolo Gênese v3.5)</h3>
-                    <p className="text-slate-500 max-w-sm mx-auto mt-2">O Arquiteto Virtual vai ler as descrições e atribuir notas (1-5).</p>
-                </div>
-                <button onClick={handleAIScoring} disabled={isAnalyzing} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg flex items-center gap-2">
-                    {isAnalyzing ? <Loader2 className="animate-spin" /> : <Calculator size={20} />} {isAnalyzing ? 'Auditando...' : 'Iniciar Auditoria'}
-                </button>
-            </div>
-         );
-    }
-    const aiWinner = aiScores[0];
+    if (!aiScores) return <div className="p-8 text-center"><button onClick={handleAIScoring} className="bg-purple-600 text-white px-4 py-2 rounded">Iniciar Auditoria IA</button></div>;
     return (
-        <div className="space-y-6 animate-fade-in p-2">
-            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 flex items-start gap-3">
-                <Bot className="text-purple-600 mt-1 shrink-0" size={24} />
-                <div>
-                    <h4 className="font-bold text-purple-900 dark:text-purple-100">Veredito do Arquiteto Virtual</h4>
-                    <p className="text-sm text-purple-800 dark:text-purple-200 mt-1">O projeto <strong>{aiWinner.proposalName}</strong> lidera com ({aiWinner.totalScore}/20).</p>
-                </div>
-            </div>
-            <div className="grid gap-6">
-                {aiScores.map((scoreData, idx) => (
-                    <div key={scoreData.proposalId} className={`bg-white dark:bg-slate-800 rounded-xl border-2 shadow-sm overflow-hidden ${idx === 0 ? 'border-emerald-400' : 'border-slate-200 dark:border-slate-700'}`}>
-                        <div className="bg-slate-50 dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                            <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">{idx === 0 && '🏆'} {scoreData.proposalName}</h3>
-                            <span className="text-xl font-black text-slate-700 dark:text-slate-300">{scoreData.totalScore}/20</span>
-                        </div>
-                        <div className="p-4 space-y-4">
-                            {CRITERIA.map((crit, cIdx) => (
-                                <div key={cIdx} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start border-b border-slate-100 dark:border-slate-700 last:border-0 pb-3 last:pb-0">
-                                    <div className="md:col-span-4"><span className="text-xs font-bold text-slate-400 uppercase block mb-1">Critério {cIdx + 1}</span><p className="text-sm font-medium text-slate-700 dark:text-slate-200">{crit}</p></div>
-                                    <div className="md:col-span-8 flex flex-col gap-2">
-                                        <div className="flex gap-1">{[1,2,3,4,5].map(star => (<div key={star} className={`w-6 h-1 rounded-full ${star <= scoreData.scores[cIdx] ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'}`}></div>))}</div>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 italic bg-slate-50 dark:bg-slate-900/50 p-2 rounded">"{scoreData.reasoning[cIdx]}"</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+        <div className="space-y-4 p-4">
+            {aiScores.map((score, idx) => (
+                <div key={idx} className="bg-white dark:bg-slate-800 p-4 rounded border">
+                    <h3 className="font-bold">{score.proposalName}: {score.totalScore}/20</h3>
+                    <div className="text-xs mt-2 space-y-1">
+                        {score.reasoning.map((r, i) => <p key={i}>Critério {i+1}: {r}</p>)}
                     </div>
-                ))}
-            </div>
-            <div className="flex justify-center pt-4"><button onClick={handleAIScoring} className="text-sm text-slate-500 hover:text-purple-600 flex items-center gap-2"><RefreshCw size={14} /> Reauditar</button></div>
+                </div>
+            ))}
         </div>
     );
   };
@@ -431,53 +315,52 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-200px)] min-h-[600px] animate-fade-in">
       <div className="flex flex-col bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-lg">
-        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 flex justify-between items-center text-white shadow-md z-10">
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 flex justify-between items-center text-white">
             <div className="flex items-center gap-2"><Sparkles size={20} /><h2 className="font-bold text-lg">Central de Auditoria</h2></div>
             <div className="flex gap-2">
-                <button onClick={handleAIScoring} className="bg-white/20 hover:bg-white/30 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center gap-2 border border-white/10"><Calculator size={14} /> IA: Pontuar</button>
-                <button onClick={handleDeepAnalysis} disabled={isAnalyzing} className="bg-white/20 hover:bg-white/30 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center gap-2 border border-white/10">{isAnalyzing ? '...' : 'IA: Resumo CTO'}</button>
+                <button onClick={handleAIScoring} className="bg-white/20 text-xs font-bold py-2 px-3 rounded flex items-center gap-2"><Calculator size={14} /> Pontuar</button>
+                <button onClick={handleDeepAnalysis} disabled={isAnalyzing} className="bg-white/20 text-xs font-bold py-2 px-3 rounded flex items-center gap-2">{isAnalyzing ? '...' : 'Resumo CTO'}</button>
             </div>
         </div>
 
         <div className="flex border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 overflow-x-auto">
-             <button onClick={() => setActiveSubTab('doc')} className={`flex-1 min-w-[100px] py-3 text-xs font-semibold flex items-center justify-center gap-2 transition-colors ${activeSubTab === 'doc' ? 'bg-white dark:bg-slate-800 border-b-2 border-orange-500 text-orange-600 dark:text-orange-400' : 'text-slate-500 hover:text-orange-500'}`}><FileType size={14} /> Documento Oficial</button>
-             <button onClick={() => setActiveSubTab('visual')} className={`flex-1 min-w-[100px] py-3 text-xs font-semibold flex items-center justify-center gap-2 transition-colors ${activeSubTab === 'visual' ? 'bg-white dark:bg-slate-800 border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:text-indigo-500'}`}><BarChart3 size={14} /> Equipe</button>
-             <button onClick={() => setActiveSubTab('ai-scoring')} className={`flex-1 min-w-[100px] py-3 text-xs font-semibold flex items-center justify-center gap-2 transition-colors ${activeSubTab === 'ai-scoring' ? 'bg-white dark:bg-slate-800 border-b-2 border-purple-500 text-purple-600 dark:text-purple-400' : 'text-slate-500 hover:text-purple-500'}`}><Brain size={14} /> Pontuação IA</button>
-             <button onClick={() => setActiveSubTab('text')} className={`flex-1 min-w-[100px] py-3 text-xs font-semibold flex items-center justify-center gap-2 transition-colors ${activeSubTab === 'text' ? 'bg-white dark:bg-slate-800 border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:text-indigo-500'}`}><FileText size={14} /> Parecer CTO</button>
-             <button onClick={() => setActiveSubTab('export')} className={`flex-1 min-w-[100px] py-3 text-xs font-semibold flex items-center justify-center gap-2 transition-colors ${activeSubTab === 'export' ? 'bg-white dark:bg-slate-800 border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'text-slate-500 hover:text-emerald-500'}`}><Download size={14} /> Exportar</button>
+             <button onClick={() => setActiveSubTab('doc')} className={`flex-1 min-w-[100px] py-3 text-xs font-semibold flex items-center justify-center gap-2 ${activeSubTab === 'doc' ? 'bg-white dark:bg-slate-800 border-b-2 border-orange-500 text-orange-600' : 'text-slate-500'}`}><FileType size={14} /> Doc Oficial</button>
+             <button onClick={() => setActiveSubTab('visual')} className={`flex-1 min-w-[100px] py-3 text-xs font-semibold flex items-center justify-center gap-2 ${activeSubTab === 'visual' ? 'bg-white dark:bg-slate-800 border-b-2 border-indigo-500 text-indigo-600' : 'text-slate-500'}`}><BarChart3 size={14} /> Visual</button>
+             <button onClick={() => setActiveSubTab('ai-scoring')} className={`flex-1 min-w-[100px] py-3 text-xs font-semibold flex items-center justify-center gap-2 ${activeSubTab === 'ai-scoring' ? 'bg-white dark:bg-slate-800 border-b-2 border-purple-500 text-purple-600' : 'text-slate-500'}`}><Brain size={14} /> IA Score</button>
+             <button onClick={() => setActiveSubTab('text')} className={`flex-1 min-w-[100px] py-3 text-xs font-semibold flex items-center justify-center gap-2 ${activeSubTab === 'text' ? 'bg-white dark:bg-slate-800 border-b-2 border-indigo-500 text-indigo-600' : 'text-slate-500'}`}><FileText size={14} /> Parecer</button>
+             <button onClick={() => setActiveSubTab('export')} className={`flex-1 min-w-[100px] py-3 text-xs font-semibold flex items-center justify-center gap-2 ${activeSubTab === 'export' ? 'bg-white dark:bg-slate-800 border-b-2 border-emerald-500 text-emerald-600' : 'text-slate-500'}`}><Download size={14} /> Exportar</button>
         </div>
         
-        <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900/50 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600">
+        <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900/50">
             {activeSubTab === 'doc' && (
                  <div className="p-6 h-full flex flex-col">
                     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm flex-1 flex flex-col">
                          <div className="flex justify-between items-center mb-4 border-b border-slate-100 dark:border-slate-700 pb-3">
-                             <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2"><FileText className="text-orange-500" size={18} /> Modelo "Matriz de Análise Comparativa"</h3>
+                             <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2"><FileText className="text-orange-500" size={18} /> Modelo Markdown</h3>
                              <div className="flex gap-2">
-                                 <button onClick={handleCopyDoc} className="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-white px-3 py-1.5 rounded flex items-center gap-1"><Share2 size={12} /> Copiar Texto</button>
-                                 <button onClick={handleDownloadDoc} className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-3 py-1.5 rounded flex items-center gap-1 hover:bg-orange-200"><Download size={12} /> Baixar .md</button>
+                                 <button onClick={handleCopyDoc} className="text-xs bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded flex items-center gap-1"><Share2 size={12} /> Copiar</button>
+                                 <button onClick={handleDownloadDoc} className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 px-3 py-1.5 rounded flex items-center gap-1"><Download size={12} /> Baixar</button>
                              </div>
                          </div>
-                         <textarea readOnly value={generateReportText(votes, members, proposals)} className="w-full flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-4 font-mono text-xs leading-relaxed text-slate-700 dark:text-slate-300 resize-none outline-none focus:ring-2 focus:ring-orange-500/50" />
+                         <textarea readOnly value={generateReportText(votes, members, proposals)} className="w-full flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-4 font-mono text-xs leading-relaxed resize-none outline-none" />
                     </div>
                  </div>
             )}
             {activeSubTab === 'visual' && <div className="p-4">{renderVisualReport()}</div>}
             {activeSubTab === 'ai-scoring' && <div className="p-4">{renderAIScoringPanel()}</div>}
-            {activeSubTab === 'text' && <div className="p-6">{analysisResult ? <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm"><h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2"><Bot size={20} className="text-purple-500"/> Parecer Técnico Completo</h3><div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{formatAIResponse(analysisResult)}</div></div> : <div className="flex flex-col items-center justify-center h-60 text-slate-400 text-center p-8"><Sparkles size={48} className="mb-4 opacity-20" /><p className="font-medium mb-2">Nenhuma análise gerada ainda.</p><p className="text-xs max-w-xs">Clique no botão "IA: Resumo CTO" no topo.</p></div>}</div>}
-            {activeSubTab === 'export' && <div className="p-8 flex flex-col gap-6 items-center justify-center h-full"><div className="text-center space-y-2"><h3 className="text-xl font-bold text-slate-800 dark:text-white">Gerar Dossiê Oficial</h3><p className="text-sm text-slate-500 max-w-xs mx-auto">Gere um arquivo Word (.doc) formatado profissionalmente.</p></div><div className="grid grid-cols-1 w-full max-w-xs gap-4"><button onClick={handleExportWord} className="flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white py-4 px-6 rounded-xl font-bold shadow-lg transition-transform hover:-translate-y-1"><FileText size={20} /> Baixar Relatório (.doc)</button><div className="grid grid-cols-2 gap-4"><button onClick={handlePrint} className="flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-800 text-white py-3 px-4 rounded-xl font-bold shadow-lg transition-transform hover:-translate-y-1 text-xs"><Printer size={16} /> Imprimir / PDF</button><button onClick={handleCopyText} className="flex items-center justify-center gap-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-white py-3 px-4 rounded-xl font-bold shadow transition-transform hover:-translate-y-1 text-xs"><Share2 size={16} /> Copiar Texto</button></div></div></div>}
+            {activeSubTab === 'text' && <div className="p-6">{analysisResult ? <div className="p-4 bg-white dark:bg-slate-800 rounded border">{formatAIResponse(analysisResult)}</div> : <p className="text-center p-8 text-slate-400">Sem análise.</p>}</div>}
+            {activeSubTab === 'export' && <div className="p-8 flex flex-col gap-4 items-center justify-center h-full"><button onClick={handleExportWord} className="bg-blue-600 text-white py-3 px-6 rounded font-bold shadow-lg">Baixar .DOC</button><button onClick={handlePrint} className="bg-slate-700 text-white py-3 px-6 rounded font-bold shadow-lg">Imprimir PDF</button></div>}
         </div>
       </div>
       <div className="flex flex-col bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-lg">
          <div className="bg-slate-100 dark:bg-slate-750 border-b border-slate-200 dark:border-slate-700 p-4 flex items-center gap-3"><div className="bg-accent text-white p-2 rounded-lg shadow-sm"><Bot size={24} /></div><div><h3 className="font-bold text-slate-900 dark:text-white">Arquiteto Virtual</h3><p className="text-xs text-slate-500 dark:text-slate-400">Protocolo Gênese v3.5 Ativo</p></div></div>
          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-900">
             {messages.map((msg, idx) => (<div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] rounded-2xl p-3 text-sm shadow-sm ${msg.role === 'user' ? 'bg-accent text-white rounded-br-none' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-bl-none'}`}>{formatAIResponse(msg.text)}</div></div>))}
-            {isLoadingChat && <div className="flex justify-start"><div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-bl-none p-3 shadow-sm flex items-center gap-2"><Loader2 className="animate-spin text-accent" size={16} /><span className="text-xs text-slate-500">Aguardando diretriz do Arquiteto...</span></div></div>}
+            {isLoadingChat && <div className="flex justify-start"><div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-bl-none p-3 shadow-sm flex items-center gap-2"><Loader2 className="animate-spin text-accent" size={16} /><span className="text-xs text-slate-500">...</span></div></div>}
             <div ref={chatEndRef} />
          </div>
          <div className="p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
-            <div className="relative"><textarea value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={handleKeyDown} placeholder="Ex: Quais os riscos de latência na Proposta 3?" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl pl-4 pr-12 py-3 text-sm focus:ring-2 focus:ring-accent outline-none resize-none dark:text-white max-h-32 shadow-inner" rows={1} /><button onClick={handleSendMessage} disabled={!inputText.trim() || isLoadingChat} className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-accent text-white rounded-lg hover:bg-sky-600 disabled:opacity-50 disabled:hover:bg-accent transition-colors shadow-sm"><Send size={16} /></button></div>
-            <p className="text-[10px] text-slate-400 text-center mt-2">Auditoria supervisionada pelo Engenheiro Edivaldo Junior.</p>
+            <div className="relative"><textarea value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={handleKeyDown} placeholder="Pergunte ao Arquiteto..." className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl pl-4 pr-12 py-3 text-sm focus:ring-2 focus:ring-accent outline-none resize-none dark:text-white max-h-32 shadow-inner" rows={1} /><button onClick={handleSendMessage} disabled={!inputText.trim() || isLoadingChat} className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-accent text-white rounded-lg hover:bg-sky-600 disabled:opacity-50 disabled:hover:bg-accent transition-colors shadow-sm"><Send size={16} /></button></div>
          </div>
       </div>
     </div>
