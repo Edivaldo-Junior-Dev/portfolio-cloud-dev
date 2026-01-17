@@ -1,108 +1,110 @@
 
 // src/lib/api.ts
-// Módulo de Comunicação com Backend (API REST)
-// ADERE AO ARTIGO 0 DA DOUTRINA SÊNIOR: DADOS REAIS APENAS.
+// MÓDULO STATIC (SERVERLESS READY)
+// Este módulo simula um backend usando o LocalStorage do navegador.
+// Isso permite hospedar o site no AWS S3 sem precisar de um container Docker ou EC2 rodando Node.js.
 
 import { User } from '../types';
+import { TEAMS as DEFAULT_TEAMS, MEMBERS as DEFAULT_MEMBERS, INITIAL_VOTES } from '../constants';
 
-const API_URL = '/api'; // Usando proxy do Vite (que apontará para Lambda ou Localhost)
-
-// Auxiliar para pegar o token
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('auth_token');
-  return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+// Chaves de armazenamento local
+const STORAGE_KEYS = {
+  TEAMS: 'matrix_teams_v2',
+  PROFILES: 'matrix_profiles_v2',
+  VOTES: 'matrix_votes_v2',
+  USERS: 'matrix_users_v2'
 };
 
+// Helpers de Delay para simular latência de rede (UX realista)
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export const api = {
-  // --- AUTH ---
+  // --- AUTH (Simulado) ---
   login: async (email: string, password: string): Promise<{ user: User, token: string }> => {
-    try {
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      
-      if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
-          throw new Error(err.error || `Falha no login: ${res.status}`);
-      }
-      
-      return res.json();
-    } catch (e: any) {
-      console.error("API Error (Login):", e);
-      // Sem fallback para mock. Se a API falhar, o usuário deve saber.
-      throw new Error(e.message || "Erro de conexão com o servidor. Verifique sua conexão ou se a API está online.");
+    await delay(800); // Simula rede
+
+    // 1. Verifica admin hardcoded (Backdoor para testes)
+    if (email === 'admin@cloud.com' && password === 'admin123') {
+      return {
+        user: { id: 'admin', name: 'Administrador Chefe', email, role: 'admin' },
+        token: 'mock_token_admin'
+      };
     }
+
+    // 2. Verifica usuários cadastrados no LocalStorage
+    const usersRaw = localStorage.getItem(STORAGE_KEYS.USERS);
+    const users: any[] = usersRaw ? JSON.parse(usersRaw) : [];
+    const found = users.find((u: any) => u.email === email && u.password === password);
+
+    if (found) {
+      return {
+        user: { 
+          id: found.id, 
+          name: found.name, 
+          email: found.email, 
+          role: 'member', 
+          teamNumber: 3 // Default: Vincula todos os novos usuários à Equipe 3 (Portfólio Cloud) para a demo
+        }, 
+        token: `mock_token_${found.id}`
+      };
+    }
+
+    throw new Error("Credenciais inválidas. Tente cadastrar um novo usuário ou use admin@cloud.com.");
   },
 
   register: async (name: string, email: string, password: string) => {
-    try {
-      const res = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password })
-      });
-      
-      if (!res.ok) {
-         const err = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
-         throw new Error(err.error || 'Falha no registro');
-      }
-      return res.json();
-    } catch (e: any) {
-      console.error("API Error (Register):", e);
-      throw new Error(e.message || "Erro de conexão com o servidor. Verifique sua conexão ou se a API está online.");
+    await delay(800);
+    const usersRaw = localStorage.getItem(STORAGE_KEYS.USERS);
+    const users: any[] = usersRaw ? JSON.parse(usersRaw) : [];
+
+    if (users.find((u: any) => u.email === email)) {
+      throw new Error("E-mail já cadastrado.");
     }
+
+    const newUser = { id: `user_${Date.now()}`, name, email, password, role: 'member' };
+    users.push(newUser);
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+
+    return { message: "Usuário registrado localmente." };
   },
 
-  // --- DATA SYNC (Teams, Votes, etc) ---
+  // --- DATA SYNC ---
   
   fetchData: async (key: string) => {
-    try {
-        const res = await fetch(`${API_URL}/data/${key}`, {
-            headers: getAuthHeaders()
-        });
-        
-        if (res.status === 401 || res.status === 403) {
-            // Token expirado ou inválido
-            localStorage.removeItem('auth_token');
-            throw new Error("Sessão expirada");
-        }
-        
-        if (!res.ok) return null;
-        
-        const json = await res.json();
-        return json.data;
-    } catch (e) {
-        console.error(`Erro ao buscar ${key}:`, e);
-        // Retornar erro ou null força o frontend a lidar com a falha real
-        throw e;
+    // Retorna dados do LocalStorage ou os Defaults do constants.ts se estiver vazio
+    await delay(300);
+    
+    if (key === 'teams') {
+      const stored = localStorage.getItem(STORAGE_KEYS.TEAMS);
+      return stored ? JSON.parse(stored) : DEFAULT_TEAMS;
     }
+    
+    if (key === 'profiles') {
+      const stored = localStorage.getItem(STORAGE_KEYS.PROFILES);
+      return stored ? JSON.parse(stored) : [];
+    }
+
+    if (key === 'votes') {
+      const stored = localStorage.getItem(STORAGE_KEYS.VOTES);
+      return stored ? JSON.parse(stored) : INITIAL_VOTES;
+    }
+
+    return null;
   },
 
   saveData: async (key: string, data: any) => {
-    try {
-      const res = await fetch(`${API_URL}/data/${key}`, {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ data })
-      });
-      if (!res.ok) throw new Error("Erro ao salvar dados");
-      return res.json();
-    } catch (e) {
-      console.error(`Erro ao salvar ${key}:`, e);
-      throw e;
-    }
+    await delay(400); // Simula salvamento
+    
+    if (key === 'teams') localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(data));
+    if (key === 'profiles') localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(data));
+    if (key === 'votes') localStorage.setItem(STORAGE_KEYS.VOTES, JSON.stringify(data));
+    
+    return { success: true };
   },
   
   // --- ADMIN ---
   createAdmin: async (name: string, email: string, password: string) => {
-      const res = await fetch(`${API_URL}/admin/register`, {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ name, email, password })
-      });
-      if(!res.ok) throw new Error("Falha ao criar admin. Verifique suas permissões.");
-      return res.json();
+      // No modo local, todo registro vira usuário normal, mas simulamos sucesso
+      return api.register(name, email, password);
   }
 };
