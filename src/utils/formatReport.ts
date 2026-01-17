@@ -9,9 +9,6 @@ export const generateReportText = (
 ): string => {
   const date = new Date().toLocaleDateString();
   
-  // Filtrar apenas membros oficiais se necessário, ou usar todos. 
-  // O modelo pede "todos os integrantes", então usaremos todos os passados.
-  
   let report = `# EXEMPLO DE PREENCHIMENTO COMPLETO: MATRIZ DE ANÁLISE COMPARATIVA\n`;
   report += `(Este é o modelo final para o documento, com espaços para a avaliação de todos os ${members.length} integrantes)\n\n`;
   report += `---\n\n`;
@@ -19,8 +16,7 @@ export const generateReportText = (
   // --- 1. DADOS DO PROJETO ---
   report += `## 1. DADOS DO PROJETO\n\n`;
   
-  // Assumindo que a "Proposta 3" ou a primeira proposta válida é o foco principal, 
-  // ou listamos genericamente se for uma análise competitiva.
+  // Tenta encontrar o projeto principal (AWS) ou usa o primeiro
   const mainProposal = proposals.find(p => p.name.includes("Nuvem") || p.name.includes("AWS")) || proposals[0];
   
   report += `* **Nome do Projeto:** ${mainProposal ? mainProposal.name : "Análise Geral"}\n`;
@@ -34,7 +30,7 @@ export const generateReportText = (
   CRITERIA.forEach((criterion, idx) => {
     report += `### Critério ${idx + 1}: ${criterion}\n`;
     
-    // Descrição genérica do critério baseada no índice (hardcoded para bater com o modelo se necessário, ou genérico)
+    // Descrições baseadas no template original
     let descCrit = "";
     if (idx === 0) descCrit = "O problema é real? A solução proposta tem valor claro?";
     if (idx === 1) descCrit = "O MVP é exequível em 3 Sprints? A tecnologia escolhida é adequada?";
@@ -50,7 +46,6 @@ export const generateReportText = (
     
     report += `\n**(Avaliações da Equipe)**\n`;
     members.forEach(m => {
-        // Coleta notas deste membro para este critério em todas as propostas
         const notes = proposals.map(p => {
              const s = votes[m.id]?.[p.id]?.[idx];
              return `P${proposals.indexOf(p)+1}:[${s || '_'}]`;
@@ -106,3 +101,4 @@ export const generateReportText = (
 
   return report;
 };
+    
