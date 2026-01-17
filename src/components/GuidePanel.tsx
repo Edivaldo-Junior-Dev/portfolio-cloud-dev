@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { CRITERIA, Member, Proposal } from '../types';
-import { BookOpen, UserCheck, BarChart3, Sparkles, Settings, Code2, Database, Layers, CheckCircle2, ChevronDown, ChevronUp, Cpu, ShieldCheck, Cloud, Server, Globe, ArrowRight, LayoutList, Target, User, Flag, Rocket, Lock, Key, MousePointerClick, AlertTriangle, Download, GitBranch, Terminal, ShieldAlert } from 'lucide-react';
+import { Member, Proposal } from '../types';
+import { ChevronDown, ChevronUp, Cloud, MousePointerClick, AlertTriangle, GitBranch, Terminal, ShieldAlert } from 'lucide-react';
 
 interface GuidePanelProps {
   members: Member[];
@@ -9,7 +9,7 @@ interface GuidePanelProps {
 }
 
 const GuidePanel: React.FC<GuidePanelProps> = ({ members, proposals }) => {
-  const [openSection, setOpenSection] = useState<string | null>('troubleshooting'); // Abre solução de problemas primeiro
+  const [openSection, setOpenSection] = useState<string | null>('troubleshooting');
 
   const toggleSection = (section: string) => {
     setOpenSection(openSection === section ? null : section);
@@ -68,6 +68,7 @@ const GuidePanel: React.FC<GuidePanelProps> = ({ members, proposals }) => {
                     <a 
                         href="https://nodejs.org/" 
                         target="_blank"
+                        rel="noreferrer"
                         className="block w-full text-center bg-green-600 text-white py-2 rounded font-bold hover:bg-green-700 transition-colors"
                     >
                         Baixar Node.js (LTS)
@@ -86,6 +87,7 @@ const GuidePanel: React.FC<GuidePanelProps> = ({ members, proposals }) => {
                     <a 
                         href="https://git-scm.com/download/win" 
                         target="_blank"
+                        rel="noreferrer"
                         className="block w-full text-center bg-orange-600 text-white py-2 rounded font-bold hover:bg-orange-700 transition-colors"
                     >
                         Baixar Git for Windows
@@ -183,7 +185,7 @@ const GuidePanel: React.FC<GuidePanelProps> = ({ members, proposals }) => {
                 <div className="space-y-4 ml-3 border-l-2 border-slate-200 dark:border-slate-700 pl-6 pb-2">
                     <div className="step-item">
                         <strong className="block text-slate-700 dark:text-slate-200">1. Static Hosting:</strong>
-                        <span className="text-slate-500 text-sm">Aba <strong>Properties</strong> -> Rolar até o fim -> Static website hosting -> <strong>Enable</strong>.</span>
+                        <span className="text-slate-500 text-sm">Aba <strong>Properties</strong> &rarr; Rolar até o fim &rarr; Static website hosting &rarr; <strong>Enable</strong>.</span>
                     </div>
                     <div className="step-item">
                         <strong className="block text-slate-700 dark:text-slate-200">2. Index:</strong>
@@ -191,7 +193,7 @@ const GuidePanel: React.FC<GuidePanelProps> = ({ members, proposals }) => {
                     </div>
                      <div className="step-item">
                         <strong className="block text-slate-700 dark:text-slate-200">3. Permissões (JSON):</strong>
-                        <span className="text-slate-500 text-sm">Aba <strong>Permissions</strong> -> Bucket Policy -> Edit -> Cole o JSON abaixo:</span>
+                        <span className="text-slate-500 text-sm">Aba <strong>Permissions</strong> &rarr; Bucket Policy &rarr; Edit &rarr; Cole o JSON abaixo:</span>
                         <pre className="bg-slate-900 text-emerald-400 p-3 rounded mt-2 text-xs overflow-x-auto font-mono">
 {`{
     "Version": "2012-10-17",
