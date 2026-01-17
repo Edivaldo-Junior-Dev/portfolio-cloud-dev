@@ -485,4 +485,3 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
 };
 
 export default AIChatPanel;
-    

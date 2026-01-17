@@ -16,7 +16,6 @@ export const generateReportText = (
   // --- 1. DADOS DO PROJETO ---
   report += `## 1. DADOS DO PROJETO\n\n`;
   
-  // Tenta encontrar o projeto principal (AWS) ou usa o primeiro
   const mainProposal = proposals.find(p => p.name.includes("Nuvem") || p.name.includes("AWS")) || proposals[0];
   
   report += `* **Nome do Projeto:** ${mainProposal ? mainProposal.name : "Análise Geral"}\n`;
@@ -30,7 +29,6 @@ export const generateReportText = (
   CRITERIA.forEach((criterion, idx) => {
     report += `### Critério ${idx + 1}: ${criterion}\n`;
     
-    // Descrições baseadas no template original
     let descCrit = "";
     if (idx === 0) descCrit = "O problema é real? A solução proposta tem valor claro?";
     if (idx === 1) descCrit = "O MVP é exequível em 3 Sprints? A tecnologia escolhida é adequada?";
@@ -59,7 +57,6 @@ export const generateReportText = (
   // --- 3. PONTUAÇÃO TOTAL E VEREDITO ---
   report += `## 3. PONTUAÇÃO TOTAL E VEREDITO\n\n`;
   
-  // Cabeçalho da Tabela
   report += `| Proposta | ${members.map(m => `Soma (${m.name.split(' ')[0]})`).join(' | ')} | **MÉDIA FINAL** |\n`;
   report += `| :--- | ${members.map(() => `:---:`).join(' | ')} | :---: |\n`;
   
@@ -101,4 +98,3 @@ export const generateReportText = (
 
   return report;
 };
-    

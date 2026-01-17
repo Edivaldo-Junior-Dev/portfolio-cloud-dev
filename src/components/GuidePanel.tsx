@@ -222,4 +222,3 @@ const GuidePanel: React.FC<GuidePanelProps> = ({ members, proposals }) => {
 };
 
 export default GuidePanel;
-    
