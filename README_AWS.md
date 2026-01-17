@@ -4,22 +4,40 @@
 **Status:** Pronto para Produção (Static)
 **Arquiteto:** Edivaldo Junior
 
-Este documento guia o processo de publicação manual na AWS S3, contornando a necessidade de automação via Lambda neste estágio inicial.
+Este documento guia o processo de publicação manual na AWS S3.
 
 ---
 
-## 🚀 Fase 1: Build (No seu Computador/IDE)
+## 🛠️ Pré-requisitos (Antes de começar)
+
+Para gerar o site no seu computador, você precisa das ferramentas básicas de desenvolvimento web:
+
+1. **Node.js instalado:**
+   * O erro `npm não é reconhecido` acontece se você não tiver isso.
+   * Baixe e instale a versão **LTS** aqui: [https://nodejs.org/](https://nodejs.org/)
+   * **Dica:** Após instalar, feche e abra o VSCode novamente.
+
+---
+
+## 🚀 Fase 1: Build (Gerar a pasta DIST)
 
 O navegador não entende React/TypeScript nativamente. Precisamos "compilar" o projeto.
 
 1. **Abra o Terminal** na pasta do projeto.
-2. **Execute o comando:**
+2. **Instale as dependências (Apenas na 1ª vez):**
+   ```bash
+   npm install
+   ```
+   *(Aguarde terminar. Uma pasta `node_modules` vai aparecer)*.
+
+3. **Gere o site final:**
    ```bash
    npm run build
    ```
-3. **Verifique:** Uma pasta chamada `dist` aparecerá na raiz.
+
+4. **Verifique:** Uma pasta chamada `dist` aparecerá na raiz.
    * Conteúdo esperado: `index.html`, pasta `assets/`, `vite.svg`, etc.
-   * **IMPORTANTE:** São *estes* arquivos que subirão para a nuvem.
+   * **IMPORTANTE:** São *estes* arquivos (o conteúdo da pasta dist) que subirão para a nuvem.
 
 ---
 
@@ -38,7 +56,8 @@ O navegador não entende React/TypeScript nativamente. Precisamos "compilar" o p
 1. Entre no bucket criado.
 2. Clique em **Upload**.
 3. Selecione ou arraste **todo o conteúdo DE DENTRO** da pasta `dist`.
-   * O `index.html` deve ficar solto na raiz do bucket, não dentro de uma subpasta `dist`.
+   * **NÃO ARRASTE** a pasta `dist` fechada. Abra ela e arraste os arquivos (`index.html`, `assets`, etc).
+   * O `index.html` deve ficar solto na raiz do bucket.
 4. Clique no botão laranja **Upload**.
 
 ### 3. Configurar Hospedagem Estática
@@ -76,7 +95,3 @@ O navegador não entende React/TypeScript nativamente. Precisamos "compilar" o p
 ## ✅ Conclusão
 
 Seu site está online! Acesse o link gerado no Passo 3.7.
-
-**Próximos Passos (Opcional - Sprint 2):**
-- Configurar CloudFront para HTTPS (Cadeado de segurança).
-- Configurar Route53 para domínio personalizado (`seunome.com`).
