@@ -9,7 +9,7 @@ interface GuidePanelProps {
 }
 
 const GuidePanel: React.FC<GuidePanelProps> = ({ members, proposals }) => {
-  const [openSection, setOpenSection] = useState<string | null>('troubleshooting');
+  const [openSection, setOpenSection] = useState<string | null>('aws_manual');
 
   const toggleSection = (section: string) => {
     setOpenSection(openSection === section ? null : section);
@@ -40,7 +40,7 @@ const GuidePanel: React.FC<GuidePanelProps> = ({ members, proposals }) => {
         </div>
         <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2">Central de Migração AWS</h1>
         <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
-          Manual Oficial e Solução de Problemas de Ambiente.
+          Manual Oficial para Deploy Manual via S3 (Método Rápido).
         </p>
       </div>
 
@@ -131,7 +131,7 @@ const GuidePanel: React.FC<GuidePanelProps> = ({ members, proposals }) => {
                     </div>
                      <div className="step-item">
                         <strong className="block text-slate-700 dark:text-slate-200">2. Instalar (Primeira vez):</strong>
-                        <span className="text-slate-500 text-sm">Digite <code>npm install</code> e dê Enter. Espere baixar tudo. (Requer Node.js)</span>
+                        <span className="text-slate-500 text-sm">Digite <code>npm install</code> e dê Enter. Espere baixar tudo.</span>
                     </div>
                     <div className="step-item">
                         <strong className="block text-slate-700 dark:text-slate-200">3. Build:</strong>
