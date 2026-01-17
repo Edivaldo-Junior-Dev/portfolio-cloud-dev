@@ -1,3 +1,4 @@
+
 import { CRITERIA, VotesState, Member, Proposal } from '../types';
 import { CORE_TEAM_IDS } from '../constants';
 
