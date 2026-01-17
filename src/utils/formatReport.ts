@@ -1,5 +1,5 @@
-
 import { CRITERIA, VotesState, Member, Proposal } from '../types';
+import { CORE_TEAM_IDS } from '../constants';
 
 export const generateReportText = (
   votes: VotesState, 
@@ -8,48 +8,66 @@ export const generateReportText = (
 ): string => {
   const date = new Date().toLocaleDateString();
   
+  // Filtrar apenas membros oficiais se necessário, ou usar todos. 
+  // O modelo pede "todos os integrantes", então usaremos todos os passados.
+  
   let report = `# EXEMPLO DE PREENCHIMENTO COMPLETO: MATRIZ DE ANÁLISE COMPARATIVA\n`;
-  report += `(Este é o modelo final para o documento, gerado automaticamente com as avaliações de ${members.length} integrantes)\n\n`;
+  report += `(Este é o modelo final para o documento, com espaços para a avaliação de todos os ${members.length} integrantes)\n\n`;
   report += `---\n\n`;
   
+  // --- 1. DADOS DO PROJETO ---
   report += `## 1. DADOS DO PROJETO\n\n`;
-  // Considerando que o foco é o projeto da equipe, mas listamos comparativos
-  const mainProject = proposals[0] ? proposals[0].name : "Não definido";
   
-  report += `* **Projeto Principal:** ${mainProject}\n`;
-  report += `* **Data da Análise:** ${date}\n`;
-  report += `* **Propostas Analisadas:** ${proposals.length}\n\n`;
+  // Assumindo que a "Proposta 3" ou a primeira proposta válida é o foco principal, 
+  // ou listamos genericamente se for uma análise competitiva.
+  const mainProposal = proposals.find(p => p.name.includes("Nuvem") || p.name.includes("AWS")) || proposals[0];
+  
+  report += `* **Nome do Projeto:** ${mainProposal ? mainProposal.name : "Análise Geral"}\n`;
+  report += `* **Link do MVP/Protótipo:** ${mainProposal && mainProposal.link ? mainProposal.link : "[Inserir Link]"}\n`;
+  report += `* **Data da Análise:** ${date}\n\n`;
   report += `---\n\n`;
   
+  // --- 2. ANÁLISE TÉCNICA POR CRITÉRIO ---
   report += `## 2. ANÁLISE TÉCNICA POR CRITÉRIO\n\n`;
 
   CRITERIA.forEach((criterion, idx) => {
     report += `### Critério ${idx + 1}: ${criterion}\n`;
-    report += `> Critério de avaliação técnica.\n\n`;
+    
+    // Descrição genérica do critério baseada no índice (hardcoded para bater com o modelo se necessário, ou genérico)
+    let descCrit = "";
+    if (idx === 0) descCrit = "O problema é real? A solução proposta tem valor claro?";
+    if (idx === 1) descCrit = "O MVP é exequível em 3 Sprints? A tecnologia escolhida é adequada?";
+    if (idx === 2) descCrit = "O projeto pode ser fatiado em entregas semanais?";
+    if (idx === 3) descCrit = "O projeto tem apelo visual (\"Wow Factor\") para o portfólio?";
+    
+    report += `> *${descCrit}*\n\n`;
     
     proposals.forEach((p, pIdx) => {
-        report += `* **Análise da Proposta ${pIdx + 1} (${p.name}):**\n  "${p.descriptions[idx] || "Sem descrição definida."}"\n\n`;
+        const desc = p.descriptions[idx] || "[Sem descrição definida]";
+        report += `* **Análise da Proposta ${pIdx + 1} (${p.name}):** ${desc}\n`;
     });
     
-    report += `**(Avaliações da Equipe)**\n`;
+    report += `\n**(Avaliações da Equipe)**\n`;
     members.forEach(m => {
-        const scores = proposals.map(p => {
+        // Coleta notas deste membro para este critério em todas as propostas
+        const notes = proposals.map(p => {
              const s = votes[m.id]?.[p.id]?.[idx];
-             // Formatação compacta: P1[5] P2[3]
-             return `${p.name.substring(0, 15)}...: [ ${s || '_'} ]/5`;
+             return `P${proposals.indexOf(p)+1}:[${s || '_'}]`;
         }).join(' | ');
-        report += `* ${m.name}: ${scores}\n`;
+        
+        report += `* ${m.name}: ${notes}/5\n`;
     });
     report += `\n---\n\n`;
   });
 
+  // --- 3. PONTUAÇÃO TOTAL E VEREDITO ---
   report += `## 3. PONTUAÇÃO TOTAL E VEREDITO\n\n`;
   
-  // Tabela Markdown simplificada para compatibilidade
+  // Cabeçalho da Tabela
   report += `| Proposta | ${members.map(m => `Soma (${m.name.split(' ')[0]})`).join(' | ')} | **MÉDIA FINAL** |\n`;
   report += `| :--- | ${members.map(() => `:---:`).join(' | ')} | :---: |\n`;
   
-  let winner = { name: 'Empate/Indefinido', avg: -1 };
+  let winner = { name: 'Indefinido', avg: -1, id: '' };
   
   proposals.forEach(p => {
     let row = `| **${p.name}** |`;
@@ -58,19 +76,24 @@ export const generateReportText = (
     
     members.forEach(m => {
         const userVotes = votes[m.id]?.[p.id];
-        const sum = userVotes ? Object.values(userVotes).reduce((a, b) => (a as number) + (b as number), 0) : 0;
-        const hasVotes = userVotes && Object.keys(userVotes).length > 0;
+        let sum = 0;
+        let hasVotes = false;
+        
+        if (userVotes) {
+            sum = (Object.values(userVotes) as number[]).reduce((a, b) => a + b, 0);
+            if (sum > 0) hasVotes = true;
+        }
         
         row += ` [ ${hasVotes ? sum : '_'} ]/20 |`;
         
         if(hasVotes) {
-            totalScore += (sum as number);
+            totalScore += sum;
             count++;
         }
     });
     
     const avg = count > 0 ? totalScore / count : 0;
-    if(avg > winner.avg) winner = { name: p.name, avg };
+    if(avg > winner.avg) winner = { name: p.name, avg, id: p.id };
     
     row += ` **[ ${avg.toFixed(1)} ]/20** |`;
     report += `${row}\n`;
@@ -78,7 +101,7 @@ export const generateReportText = (
   
   report += `\n### 🏆 VENCEDOR OFICIAL: ${winner.name}\n\n`;
   report += `**Justificativa da Escolha:**\n`;
-  report += `[Espaço reservado para justificativa do Arquiteto baseada na média de ${winner.avg.toFixed(1)} pontos. O projeto apresentou a melhor relação entre viabilidade técnica e impacto.]\n`;
+  report += `[O projeto ${winner.name} foi selecionado com uma média de ${winner.avg.toFixed(1)} pontos. A equipe avaliou que ele apresenta o melhor equilíbrio entre viabilidade técnica (MVP claro) e impacto de portfólio (Uso de AWS Lambda/S3).]\n`;
 
   return report;
 };
