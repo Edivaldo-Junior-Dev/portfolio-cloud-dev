@@ -8,36 +8,39 @@ Este documento guia o processo de publicação manual na AWS S3.
 
 ---
 
-## 🛠️ Pré-requisitos (Antes de começar)
+## 🚨 CORREÇÃO DE ERROS (Leia Primeiro)
 
-Para gerar o site no seu computador, você precisa das ferramentas básicas de desenvolvimento web:
+Se o seu VSCode ou Terminal apresentarem erros, instale as ferramentas abaixo e reinicie o computador.
 
-1. **Node.js instalado:**
-   * O erro `npm não é reconhecido` acontece se você não tiver isso.
-   * Baixe e instale a versão **LTS** aqui: [https://nodejs.org/](https://nodejs.org/)
-   * **Dica:** Após instalar, feche e abra o VSCode novamente.
+### 1. Erro: "O termo 'npm' não é reconhecido"
+*   **Causa:** Falta o Node.js.
+*   **Solução:** Baixe e instale a versão **LTS**: [https://nodejs.org/](https://nodejs.org/)
+
+### 2. Erro: "Unable to find git" ou "Não sincroniza com GitHub"
+*   **Causa:** Falta o Git no Windows.
+*   **Solução:** Baixe e instale o Git for Windows: [https://git-scm.com/download/win](https://git-scm.com/download/win)
+
+### 3. Erro: "A execução de scripts foi desabilitada" (PowerShell)
+*   **Causa:** Bloqueio de segurança padrão do Windows.
+*   **Solução:** Digite este comando no terminal e aceite (S):
+    ```powershell
+    Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+    ```
 
 ---
 
 ## 🚀 Fase 1: Build (Gerar a pasta DIST)
-
-O navegador não entende React/TypeScript nativamente. Precisamos "compilar" o projeto.
 
 1. **Abra o Terminal** na pasta do projeto.
 2. **Instale as dependências (Apenas na 1ª vez):**
    ```bash
    npm install
    ```
-   *(Aguarde terminar. Uma pasta `node_modules` vai aparecer)*.
-
 3. **Gere o site final:**
    ```bash
    npm run build
    ```
-
 4. **Verifique:** Uma pasta chamada `dist` aparecerá na raiz.
-   * Conteúdo esperado: `index.html`, pasta `assets/`, `vite.svg`, etc.
-   * **IMPORTANTE:** São *estes* arquivos (o conteúdo da pasta dist) que subirão para a nuvem.
 
 ---
 
@@ -67,7 +70,6 @@ O navegador não entende React/TypeScript nativamente. Precisamos "compilar" o p
 4. **Index document:** `index.html`
 5. **Error document:** `index.html` (Essencial para React Router).
 6. Clique **Save changes**.
-7. *Copie a URL que apareceu lá no final (Bucket website endpoint).*
 
 ### 4. Permissões de Leitura (Bucket Policy)
 1. Vá na aba **Permissions**.
@@ -94,4 +96,4 @@ O navegador não entende React/TypeScript nativamente. Precisamos "compilar" o p
 
 ## ✅ Conclusão
 
-Seu site está online! Acesse o link gerado no Passo 3.7.
+Seu site está online! Acesse o link gerado no Passo 3.

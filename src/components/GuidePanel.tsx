@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { CRITERIA, Member, Proposal } from '../types';
-import { BookOpen, UserCheck, BarChart3, Sparkles, Settings, Code2, Database, Layers, CheckCircle2, ChevronDown, ChevronUp, Cpu, ShieldCheck, Cloud, Server, Globe, ArrowRight, LayoutList, Target, User, Flag, Rocket, Lock, Key, MousePointerClick, AlertTriangle } from 'lucide-react';
+import { BookOpen, UserCheck, BarChart3, Sparkles, Settings, Code2, Database, Layers, CheckCircle2, ChevronDown, ChevronUp, Cpu, ShieldCheck, Cloud, Server, Globe, ArrowRight, LayoutList, Target, User, Flag, Rocket, Lock, Key, MousePointerClick, AlertTriangle, Download, GitBranch, Terminal, ShieldAlert } from 'lucide-react';
 
 interface GuidePanelProps {
   members: Member[];
@@ -9,7 +9,7 @@ interface GuidePanelProps {
 }
 
 const GuidePanel: React.FC<GuidePanelProps> = ({ members, proposals }) => {
-  const [openSection, setOpenSection] = useState<string | null>('aws_manual'); // Abre o manual direto
+  const [openSection, setOpenSection] = useState<string | null>('troubleshooting'); // Abre solução de problemas primeiro
 
   const toggleSection = (section: string) => {
     setOpenSection(openSection === section ? null : section);
@@ -40,27 +40,82 @@ const GuidePanel: React.FC<GuidePanelProps> = ({ members, proposals }) => {
         </div>
         <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2">Central de Migração AWS</h1>
         <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
-          Manual Oficial para Deploy Manual via S3 (Método Rápido).
+          Manual Oficial e Solução de Problemas de Ambiente.
         </p>
       </div>
 
       <div className="space-y-4">
+
+        {/* SECTION: SOLUÇÃO DE PROBLEMAS (GIT E NODE) */}
+        <SectionHeader id="troubleshooting" title="Correção de Erros (Git e NPM)" icon={AlertTriangle} colorClass="text-red-600 bg-red-600" />
+        {openSection === 'troubleshooting' && (
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 space-y-6 animate-fade-in-down">
+            
+            <p className="text-slate-600 dark:text-slate-300">
+                Se você está vendo erros no terminal ou o VSCode não sincroniza, instale as ferramentas abaixo e <strong>reinicie o computador</strong>.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* NODE JS */}
+                <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 bg-slate-50 dark:bg-slate-900">
+                    <div className="flex items-center gap-2 mb-2 text-green-600 font-bold">
+                        <Terminal size={20} />
+                        <h3>Erro: "npm não reconhecido"</h3>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-4">
+                        O comando <code>npm run build</code> falha porque você não tem o Node.js.
+                    </p>
+                    <a 
+                        href="https://nodejs.org/" 
+                        target="_blank"
+                        className="block w-full text-center bg-green-600 text-white py-2 rounded font-bold hover:bg-green-700 transition-colors"
+                    >
+                        Baixar Node.js (LTS)
+                    </a>
+                </div>
+
+                {/* GIT */}
+                <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 bg-slate-50 dark:bg-slate-900">
+                    <div className="flex items-center gap-2 mb-2 text-orange-600 font-bold">
+                        <GitBranch size={20} />
+                        <h3>Erro: "Unable to find git"</h3>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-4">
+                        O VSCode não consegue sincronizar com GitHub sem o Git instalado no Windows.
+                    </p>
+                    <a 
+                        href="https://git-scm.com/download/win" 
+                        target="_blank"
+                        className="block w-full text-center bg-orange-600 text-white py-2 rounded font-bold hover:bg-orange-700 transition-colors"
+                    >
+                        Baixar Git for Windows
+                    </a>
+                </div>
+
+                {/* POWERSHELL SCRIPT ERROR */}
+                <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 bg-slate-50 dark:bg-slate-900 lg:col-span-1 md:col-span-2">
+                    <div className="flex items-center gap-2 mb-2 text-red-500 font-bold">
+                        <ShieldAlert size={20} />
+                        <h3>Erro: "Scripts desabilitados"</h3>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-4">
+                        Se aparecer erro vermelho ao dar <code>npm install</code>, rode este comando no terminal para destravar o Windows:
+                    </p>
+                    <code className="block w-full bg-slate-800 text-yellow-400 p-2 rounded text-[10px] font-mono break-all mb-2">
+                        Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+                    </code>
+                    <p className="text-[10px] text-slate-400 italic">Aceite digitando "S" ou "Y" quando pedir.</p>
+                </div>
+            </div>
+
+          </div>
+        )}
 
         {/* SECTION: MANUAL TÉCNICO (CLIQUE A CLIQUE) */}
         <SectionHeader id="aws_manual" title="Manual de Deploy: Upload via Computador (VSCode)" icon={MousePointerClick} colorClass="text-orange-600 bg-orange-600" />
         {openSection === 'aws_manual' && (
           <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 space-y-8 animate-fade-in-down">
             
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800 flex gap-3">
-               <AlertTriangle className="text-yellow-600 shrink-0" />
-               <div>
-                  <h4 className="font-bold text-yellow-800 dark:text-yellow-200">Atenção: Use os arquivos da pasta DIST</h4>
-                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                     Não suba a pasta do projeto inteira (src, node_modules, etc). A AWS só entende os arquivos finais gerados dentro da pasta <code>dist</code>.
-                  </p>
-               </div>
-            </div>
-
             {/* PASSO 1: BUILD */}
             <div>
                 <h3 className="flex items-center gap-2 font-bold text-xl text-slate-800 dark:text-white mb-4">
@@ -72,12 +127,16 @@ const GuidePanel: React.FC<GuidePanelProps> = ({ members, proposals }) => {
                         <strong className="block text-slate-700 dark:text-slate-200">1. Terminal:</strong>
                         <span className="text-slate-500 text-sm">Abra o terminal do VSCode na pasta do projeto.</span>
                     </div>
+                     <div className="step-item">
+                        <strong className="block text-slate-700 dark:text-slate-200">2. Instalar (Primeira vez):</strong>
+                        <span className="text-slate-500 text-sm">Digite <code>npm install</code> e dê Enter. Espere baixar tudo. (Requer Node.js)</span>
+                    </div>
                     <div className="step-item">
-                        <strong className="block text-slate-700 dark:text-slate-200">2. Comando:</strong>
+                        <strong className="block text-slate-700 dark:text-slate-200">3. Build:</strong>
                         <span className="text-slate-500 text-sm">Digite <code>npm run build</code> e dê Enter.</span>
                     </div>
                     <div className="step-item">
-                        <strong className="block text-slate-700 dark:text-slate-200">3. Resultado:</strong>
+                        <strong className="block text-slate-700 dark:text-slate-200">4. Resultado:</strong>
                         <span className="text-slate-500 text-sm">Uma pasta chamada <code>dist</code> vai aparecer na lista de arquivos à esquerda.</span>
                     </div>
                 </div>

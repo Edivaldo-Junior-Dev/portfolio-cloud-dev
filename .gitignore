@@ -37,3 +37,6 @@ PROTOCOLO_GENESE.md
 metadata.json
 *.ai_log
 *.context
+
+# --- DOCUMENTAÇÃO EXTERNA (Ignorar no Git) ---
+TEMPLATE_MATRIZ.md
