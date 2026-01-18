@@ -169,7 +169,7 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-3-pro-preview',
             contents: prompt,
             config: { 
                 responseMimeType: "application/json",
@@ -216,7 +216,7 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
         const prompt = `${context}\nGere um RELATÓRIO TÉCNICO EXECUTIVO. Veredito, Arquitetura e Riscos. Sem emojis.`;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-3-pro-preview',
             contents: prompt
         });
 
