@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Member, Proposal } from '../types';
 import { ChevronDown, ChevronUp, Cloud, MousePointerClick, AlertTriangle, GitBranch, Terminal, ShieldAlert } from 'lucide-react';

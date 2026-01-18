@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { Member, Proposal, VotesState, CRITERIA } from '../types';
 import { CORE_TEAM_IDS } from '../constants';
 import { generateReportText } from '../utils/formatReport';
@@ -165,13 +165,28 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
         const prompt = `
         ${dataPrompt}
         TAREFA: Atribua notas de 1 a 5.
-        Retorne APENAS JSON: [{ "proposalId": "string", "proposalName": "string", "scores": [n,n,n,n], "reasoning": ["s","s","s","s"] }]
+        Retorne APENAS JSON seguindo o schema.
         `;
 
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: prompt,
-            config: { responseMimeType: "application/json" }
+            config: { 
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            proposalId: { type: Type.STRING },
+                            proposalName: { type: Type.STRING },
+                            scores: { type: Type.ARRAY, items: { type: Type.NUMBER } },
+                            reasoning: { type: Type.ARRAY, items: { type: Type.STRING } }
+                        },
+                        required: ["proposalId", "proposalName", "scores", "reasoning"]
+                    }
+                }
+            }
         });
 
         const jsonText = response.text;
