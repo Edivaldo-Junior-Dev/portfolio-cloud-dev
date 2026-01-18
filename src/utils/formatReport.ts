@@ -9,16 +9,15 @@ export const generateReportText = (
 ): string => {
   const date = new Date().toLocaleDateString();
   
+  // Tenta encontrar o projeto principal (AWS) ou usa o primeiro
+  const mainProposal = proposals.find(p => p.name.includes("Nuvem") || p.name.includes("AWS")) || proposals[0];
+
   let report = `# EXEMPLO DE PREENCHIMENTO COMPLETO: MATRIZ DE ANÁLISE COMPARATIVA\n`;
   report += `(Este é o modelo final para o documento, com espaços para a avaliação de todos os ${members.length} integrantes)\n\n`;
   report += `---\n\n`;
   
   // --- 1. DADOS DO PROJETO ---
   report += `## 1. DADOS DO PROJETO\n\n`;
-  
-  // Tenta encontrar o projeto principal (AWS) ou usa o primeiro
-  const mainProposal = proposals.find(p => p.name.includes("Nuvem") || p.name.includes("AWS")) || proposals[0];
-  
   report += `* **Nome do Projeto:** ${mainProposal ? mainProposal.name : "Análise Geral"}\n`;
   report += `* **Link do MVP/Protótipo:** ${mainProposal && mainProposal.link ? mainProposal.link : "[Inserir Link]"}\n`;
   report += `* **Data da Análise:** ${date}\n\n`;
@@ -46,6 +45,7 @@ export const generateReportText = (
     
     report += `\n**(Avaliações da Equipe)**\n`;
     members.forEach(m => {
+        // Busca a nota de cada proposta para este critério
         const notes = proposals.map(p => {
              const s = votes[m.id]?.[p.id]?.[idx];
              return `P${proposals.indexOf(p)+1}:[${s || '_'}]`;
@@ -97,7 +97,7 @@ export const generateReportText = (
   
   report += `\n### 🏆 VENCEDOR OFICIAL: ${winner.name}\n\n`;
   report += `**Justificativa da Escolha:**\n`;
-  report += `[O projeto ${winner.name} foi selecionado com uma média de ${winner.avg.toFixed(1)} pontos. A equipe avaliou que ele apresenta o melhor equilíbrio entre viabilidade técnica (MVP claro) e impacto de portfólio (Uso de AWS Lambda/S3).]\n`;
+  report += `[O projeto ${winner.name} foi selecionado com uma média de ${winner.avg.toFixed(1)} pontos. A equipe avaliou que ele apresenta o melhor equilíbrio entre viabilidade técnica (MVP claro) e impacto de portfólio.]\n`;
 
   return report;
 };
