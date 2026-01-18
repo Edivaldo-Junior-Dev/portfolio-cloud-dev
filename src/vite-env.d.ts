@@ -1,9 +1,13 @@
-declare const process: {
-  env: {
-    API_KEY: string;
-    [key: string]: string | undefined;
-  }
-};
+export {};
+
+declare global {
+  var process: {
+    env: {
+      API_KEY: string;
+      [key: string]: string | undefined;
+    }
+  };
+}
 
 declare module '*.png';
 declare module '*.jpg';
