@@ -4,7 +4,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Member, Proposal, VotesState, CRITERIA } from '../types';
 import { CORE_TEAM_IDS } from '../constants';
 import { generateReportText } from '../utils/formatReport';
-import { Send, Bot, Sparkles, Loader2, RefreshCw, FileText, BarChart3, Download, Share2, Printer, Table, Brain, Calculator, FileType } from 'lucide-react';
+import { Send, Bot, Sparkles, Loader2, RefreshCw, FileText, BarChart3, Download, Share2, Printer, Table, Brain, Calculator, FileType, Eye, Code } from 'lucide-react';
 
 interface AIChatPanelProps {
   proposals: Proposal[];
@@ -39,6 +39,7 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
   
   // Default to 'doc' (Documento Oficial)
   const [activeSubTab, setActiveSubTab] = useState<'visual' | 'doc' | 'ai-scoring' | 'text' | 'export'>('doc'); 
+  const [docViewMode, setDocViewMode] = useState<'preview' | 'source'>('preview');
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const reportRef = useRef<HTMLDivElement>(null);
@@ -327,6 +328,146 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
     );
   };
 
+  // --- DOCUMENT PREVIEW COMPONENT ---
+  const DocumentPreview = () => {
+    const mainProposal = proposals.find(p => p.name.includes("Nuvem") || p.name.includes("AWS")) || proposals[0];
+    const date = new Date().toLocaleDateString();
+    
+    // Sort proposals by average score to highlight winner
+    const sortedProposals = [...proposals].sort((a, b) => {
+        const getAvg = (pId: string) => {
+            let total = 0, count = 0;
+            members.forEach(m => {
+                const v = votes[m.id]?.[pId];
+                if(v) {
+                    const s = Object.values(v).reduce((x:number, y:number)=>x+y,0);
+                    if(s>0) { total += s; count++; }
+                }
+            });
+            return count > 0 ? total/count : 0;
+        };
+        return getAvg(b.id) - getAvg(a.id);
+    });
+
+    const winnerProposal = sortedProposals[0];
+    const winnerAvg = (() => {
+         let total = 0, count = 0;
+         members.forEach(m => {
+             const v = votes[m.id]?.[winnerProposal.id];
+             if(v) { const s = Object.values(v).reduce((x:number, y:number)=>x+y,0); if(s>0) { total += s; count++; } }
+         });
+         return count > 0 ? (total/count).toFixed(1) : "0.0";
+    })();
+
+    return (
+        <div className="bg-white text-slate-900 p-8 md:p-12 shadow-sm max-w-4xl mx-auto min-h-screen font-serif">
+            <div className="border-b-2 border-slate-900 pb-4 mb-8 text-center">
+                <h1 className="text-2xl font-black uppercase tracking-tight mb-2">Matriz de Análise Comparativa</h1>
+                <p className="text-slate-500 italic font-sans text-sm">Exemplo de Preenchimento Completo (Modelo Oficial)</p>
+            </div>
+
+            {/* 1. DADOS */}
+            <div className="mb-8">
+                <h2 className="text-lg font-bold uppercase border-b border-slate-300 mb-4 pb-1 font-sans">1. Dados do Projeto</h2>
+                <div className="grid grid-cols-1 gap-2 text-sm">
+                    <p><strong className="text-slate-700">Projeto Principal:</strong> {mainProposal?.name || "N/A"}</p>
+                    <p><strong className="text-slate-700">Link do MVP:</strong> <span className="text-blue-600 underline">{mainProposal?.link || "Não informado"}</span></p>
+                    <p><strong className="text-slate-700">Data da Análise:</strong> {date}</p>
+                </div>
+            </div>
+
+            {/* 2. CRITÉRIOS */}
+            <div className="mb-8 space-y-8">
+                <h2 className="text-lg font-bold uppercase border-b border-slate-300 mb-6 pb-1 font-sans">2. Análise Técnica por Critério</h2>
+                
+                {CRITERIA.map((crit, cIdx) => (
+                    <div key={cIdx} className="break-inside-avoid">
+                        <h3 className="font-bold text-base text-slate-900 mb-1">{cIdx + 1}. {crit}</h3>
+                        <p className="text-xs italic text-slate-500 mb-3 border-l-2 border-slate-200 pl-3">
+                           {cIdx === 0 && "O problema é real? A solução proposta tem valor claro?"}
+                           {cIdx === 1 && "O MVP é exequível em 3 Sprints? A tecnologia escolhida é adequada?"}
+                           {cIdx === 2 && "O projeto pode ser fatiado em entregas semanais?"}
+                           {cIdx === 3 && "O projeto tem apelo visual (\"Wow Factor\") para o portfólio?"}
+                        </p>
+
+                        <div className="space-y-4 mb-4">
+                            {proposals.map((p, pIdx) => (
+                                <div key={p.id} className="bg-slate-50 p-3 rounded border border-slate-100">
+                                    <span className="font-bold text-slate-700 text-xs uppercase block mb-1">Análise da Proposta {pIdx + 1} ({p.name}):</span>
+                                    <p className="text-sm text-slate-800 leading-relaxed">{p.descriptions[cIdx] || "Sem análise registrada."}</p>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <div className="pl-2">
+                             <p className="text-xs font-bold text-slate-400 uppercase mb-2">Avaliações da Equipe (Notas):</p>
+                             <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1">
+                                {members.map(m => {
+                                    const scores = proposals.map((p, i) => `P${i+1}:[${votes[m.id]?.[p.id]?.[cIdx] || '_'}]`).join(' ');
+                                    return (
+                                        <div key={m.id} className="text-xs font-mono text-slate-600">
+                                            <span className="font-bold text-slate-800">{m.name.split(' ')[0]}:</span> {scores}
+                                        </div>
+                                    )
+                                })}
+                             </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* 3. VEREDITO */}
+            <div className="break-inside-avoid">
+                <h2 className="text-lg font-bold uppercase border-b border-slate-300 mb-6 pb-1 font-sans">3. Pontuação Total & Veredito</h2>
+                
+                <table className="w-full text-sm border-collapse border border-slate-800 mb-6">
+                    <thead>
+                        <tr className="bg-slate-100 font-sans">
+                            <th className="border border-slate-300 p-2 text-left">Proposta</th>
+                            <th className="border border-slate-300 p-2 text-center">Total Acumulado</th>
+                            <th className="border border-slate-300 p-2 text-center">Média Final</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {proposals.map(p => {
+                             let total = 0;
+                             let count = 0;
+                             members.forEach(m => {
+                                 const v = votes[m.id]?.[p.id];
+                                 if(v) {
+                                     const s = Object.values(v).reduce((a:number,b:number)=>a+b,0);
+                                     if(s>0) { total += s; count++; }
+                                 }
+                             });
+                             const avg = count > 0 ? (total/count).toFixed(1) : "0.0";
+                             const isWinner = p.id === winnerProposal.id;
+                             return (
+                                 <tr key={p.id} className={isWinner ? "bg-emerald-50" : ""}>
+                                     <td className="border border-slate-300 p-2 font-medium">
+                                        {p.name} {isWinner && "🏆"}
+                                     </td>
+                                     <td className="border border-slate-300 p-2 text-center text-slate-600">{total} pts</td>
+                                     <td className={`border border-slate-300 p-2 text-center font-bold ${isWinner ? "text-emerald-700" : "text-slate-900"}`}>
+                                        {avg}/20
+                                     </td>
+                                 </tr>
+                             )
+                        })}
+                    </tbody>
+                </table>
+
+                <div className="bg-slate-100 border-l-4 border-slate-800 p-4 mt-6">
+                    <h3 className="font-bold text-lg mb-1">🏆 VENCEDOR OFICIAL: {winnerProposal.name}</h3>
+                    <p className="text-sm text-slate-700 italic">
+                        O projeto <strong>{winnerProposal.name}</strong> foi selecionado com uma média de <strong>{winnerAvg}</strong> pontos. 
+                        A equipe avaliou que ele apresenta o melhor equilíbrio entre viabilidade técnica (MVP claro) e impacto de portfólio.
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-200px)] min-h-[600px] animate-fade-in">
       <div className="flex flex-col bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-lg">
@@ -348,16 +489,32 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({ proposals, members, votes }) 
         
         <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900/50">
             {activeSubTab === 'doc' && (
-                 <div className="p-6 h-full flex flex-col">
-                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm flex-1 flex flex-col">
-                         <div className="flex justify-between items-center mb-4 border-b border-slate-100 dark:border-slate-700 pb-3">
-                             <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2"><FileText className="text-orange-500" size={18} /> Modelo Markdown</h3>
-                             <div className="flex gap-2">
-                                 <button onClick={handleCopyDoc} className="text-xs bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded flex items-center gap-1"><Share2 size={12} /> Copiar</button>
-                                 <button onClick={handleDownloadDoc} className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 px-3 py-1.5 rounded flex items-center gap-1"><Download size={12} /> Baixar</button>
-                             </div>
+                 <div className="p-0 h-full flex flex-col relative">
+                    {/* Toolbar de Visualização */}
+                    <div className="sticky top-0 z-10 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-2 flex justify-between items-center shadow-sm">
+                         <div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
+                            <button onClick={() => setDocViewMode('preview')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all ${docViewMode === 'preview' ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-white shadow-sm' : 'text-slate-500 hover:text-indigo-500'}`}>
+                                <Eye size={14} /> Visualização
+                            </button>
+                            <button onClick={() => setDocViewMode('source')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all ${docViewMode === 'source' ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-white shadow-sm' : 'text-slate-500 hover:text-indigo-500'}`}>
+                                <Code size={14} /> Markdown
+                            </button>
                          </div>
-                         <textarea readOnly value={generateReportText(votes, members, proposals)} className="w-full flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-4 font-mono text-xs leading-relaxed resize-none outline-none" />
+                         <div className="flex gap-2">
+                            <button onClick={handleCopyDoc} className="text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors text-slate-700 dark:text-slate-200 font-medium"><Share2 size={12} /> Copiar</button>
+                            <button onClick={handleDownloadDoc} className="text-xs bg-orange-100 hover:bg-orange-200 dark:bg-orange-900/30 text-orange-700 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors font-bold"><Download size={12} /> Baixar</button>
+                         </div>
+                    </div>
+
+                    {/* Content Area */}
+                    <div className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-950 p-4 md:p-8">
+                        {docViewMode === 'preview' ? (
+                            <DocumentPreview />
+                        ) : (
+                            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-1 shadow-sm h-full">
+                                <textarea readOnly value={generateReportText(votes, members, proposals)} className="w-full h-full bg-slate-50 dark:bg-slate-900 border-0 rounded-lg p-6 font-mono text-xs leading-relaxed resize-none outline-none custom-scrollbar text-slate-600 dark:text-slate-300" />
+                            </div>
+                        )}
                     </div>
                  </div>
             )}
